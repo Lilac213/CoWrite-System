@@ -274,8 +274,8 @@ async def check_models_health():
     results["models"]["polish"] = await _check_model_health(
         "polish",
         settings.POLISH_MODEL,
-        settings.POLISH_API_KEY,
-        settings.POLISH_BASE_URL
+        settings.POLISH_API_KEY or settings.OPENAI_API_KEY,
+        settings.POLISH_BASE_URL or settings.OPENAI_BASE_URL
     )
     if results["models"]["polish"]["status"] == "unavailable":
         results["overall_status"] = "degraded"
@@ -284,8 +284,8 @@ async def check_models_health():
     results["models"]["enhance"] = await _check_model_health(
         "enhance",
         settings.ENHANCE_MODEL,
-        settings.ENHANCE_API_KEY,
-        settings.ENHANCE_BASE_URL
+        settings.ENHANCE_API_KEY or settings.OPENAI_API_KEY,
+        settings.ENHANCE_BASE_URL or settings.OPENAI_BASE_URL
     )
     if results["models"]["enhance"]["status"] == "unavailable":
         results["overall_status"] = "degraded"
