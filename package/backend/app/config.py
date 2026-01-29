@@ -87,8 +87,9 @@ class Settings(BaseSettings):
     
     class Config:
         env_file = get_env_file_path()
+        env_file_encoding = 'utf-8'
         case_sensitive = True
-
+        extra = "ignore"
 
 # 加载 exe 目录下的 .env 文件
 _env_path = get_env_file_path()
@@ -97,6 +98,12 @@ if os.path.exists(_env_path):
     load_dotenv(_env_path)
 
 settings = Settings()
+
+# Vercel 调试日志
+print(f"Loaded Configuration:")
+print(f"  ADMIN_USERNAME: {settings.ADMIN_USERNAME}")
+print(f"  ADMIN_PASSWORD (len): {len(settings.ADMIN_PASSWORD)}")
+print(f"  DATABASE_URL: {settings.DATABASE_URL.split('@')[-1] if '@' in settings.DATABASE_URL else 'local'}")
 
 
 def reload_settings():

@@ -95,6 +95,18 @@ app.include_router(prompts.router, prefix="/api")
 app.include_router(optimization.router, prefix="/api")
 app.include_router(word_formatter_router, prefix="/api")
 
+@app.get("/api/debug-env")
+async def debug_env():
+    """临时调试接口，用于检查环境变量是否生效"""
+    return {
+        "admin_username": settings.ADMIN_USERNAME,
+        "is_default_password": settings.ADMIN_PASSWORD == "admin123",
+        "password_length": len(settings.ADMIN_PASSWORD),
+        "frontend_url": settings.FRONTEND_BASE_URL,
+        "database_url_type": "postgresql" if "postgresql" in settings.DATABASE_URL else "sqlite",
+        "env_vars_sample": [k for k in os.environ.keys() if k.startswith("ADMIN") or k.startswith("VERCEL")]
+    }
+
 # 速率限制中间件已移除
 
 
