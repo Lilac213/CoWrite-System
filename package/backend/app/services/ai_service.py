@@ -233,7 +233,13 @@ class AIService:
             thinking_buffer = ""  # 暂存可能的思考内容
             
             async for chunk in stream:
-                if chunk.choices and chunk.choices[0].delta.content:
+                # 检查 chunk 是否是字符串（某些代理或旧版本库可能返回字符串）
+                if isinstance(chunk, str):
+                     full_response += chunk
+                     yield chunk
+                     continue
+
+                if chunk.choices and len(chunk.choices) > 0 and chunk.choices[0].delta.content:
                     content = chunk.choices[0].delta.content
                     full_response += content
                     
