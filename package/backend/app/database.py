@@ -3,10 +3,26 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from app.config import settings
 
-engine = create_engine(
-    settings.DATABASE_URL,
-    connect_args={"check_same_thread": False} if "sqlite" in settings.DATABASE_URL else {}
-)
+engine = None
+try:
+    print(f"Attempting to connect to database: {settings.DATABASE_URL.split('@')[-1] if '@' in settings.DATABASE_URL else 'local sqlite'}")
+    engine = create_engine(
+        settings.DATABASE_URL,
+        connect_args={"check_same_thread": False} if "sqlite" in settings.DATABASE_URL else {}
+    )
+except Exception as e:
+    print(f"\n{'!'*50}")
+    print(f"CRITICAL ERROR: Failed to create database engine!")
+    print(f"Error details: {str(e)}")
+    print(f"DATABASE_URL (masked): {settings.DATABASE_URL.split('@')[-1] if '@' in settings.DATABASE_URL else '***'}")
+    print("Falling back to IN-MEMORY SQLite database to allow application startup.")
+    print(f"{'!'*50}\n")
+    
+    # Fallback to in-memory SQLite
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False}
+    )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
