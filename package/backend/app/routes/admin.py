@@ -771,6 +771,13 @@ async def update_config(
     if not updates:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="缺少更新内容")
 
+    # 检查是否在 Vercel 环境
+    if os.environ.get("VERCEL") == "1":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="Vercel 环境下无法通过网页修改配置。请在 Vercel 控制台 -> Settings -> Environment Variables 中修改环境变量。"
+        )
+
     # 使用 config.py 中的函数获取 .env 路径，支持 exe 环境
     from app.config import get_env_file_path
     env_path = get_env_file_path()
