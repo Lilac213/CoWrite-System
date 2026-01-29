@@ -233,47 +233,91 @@ class AIService:
             thinking_buffer = ""  # 暂存可能的思考内容
             
             async for chunk in stream:
-                # 检查 chunk 是否是字符串（某些代理或旧版本库可能返回字符串）
+                # 增强的健壮性检查：处理各种可能的返回格式
+
+                # 1. 字符串类型（某些代理或旧版本库可能返回字符串）
                 if isinstance(chunk, str):
                      full_response += chunk
                      yield chunk
                      continue
-
-                if chunk.choices and len(chunk.choices) > 0 and chunk.choices[0].delta.content:
-                    content = chunk.choices[0].delta.content
-                    full_response += content
-                    
-                    # 检测和过滤思考标签
-                    # 将内容添加到缓冲区以检测标签
-                    thinking_buffer += content
-                    
-                    # 检查是否进入思考标签
-                    if not in_thinking_tag and ('<think>' in thinking_buffer.lower() or '<thinking>' in thinking_buffer.lower()):
-                        in_thinking_tag = True
-                        # 输出标签之前的内容
-                        before_tag = re.split(r'<think>|<thinking>', thinking_buffer, flags=re.IGNORECASE)[0]
-                        if before_tag:
-                            yield before_tag
-                        thinking_buffer = ""
-                        continue
-                    
-                    # 检查是否退出思考标签
-                    if in_thinking_tag and ('</think>' in thinking_buffer.lower() or '</thinking>' in thinking_buffer.lower()):
-                        in_thinking_tag = False
-                        # 清空缓冲区，跳过标签后的内容
-                        thinking_buffer = re.split(r'</think>|</thinking>', thinking_buffer, flags=re.IGNORECASE)[-1]
-                        continue
-                    
-                    # 如果不在思考标签内，输出内容
-                    if not in_thinking_tag:
-                        # 保留最后几个字符在缓冲区以检测跨块的标签
-                        if len(thinking_buffer) > THINKING_TAG_BUFFER_SIZE:
-                            yield_content = thinking_buffer[:-THINKING_TAG_BUFFER_SIZE]
-                            thinking_buffer = thinking_buffer[-THINKING_TAG_BUFFER_SIZE:]
-                            yield yield_content
+                
+                # 2. 字典类型（如果使用了某些转换或兼容层）
+                if isinstance(chunk, dict):
+                    choices = chunk.get("choices", [])
+                    if choices and len(choices) > 0:
+                        delta = choices[0].get("delta", {})
+                        # delta 可能是 dict 或对象
+                        if isinstance(delta, dict):
+                            content = delta.get("content")
+                        elif hasattr(delta, "content"):
+                            content = delta.content
+                        else:
+                            content = None
+                            
+                        if content:
+                            full_response += content
+                            # ... (后续思考标签逻辑复用) ...
+                            # 为简化，这里直接 yield content，思考标签处理放在下面统一
+                            pass 
+                    # 注意：如果这里是个 dict，下面的对象属性访问会报错，所以要 continue 或转换
+                    # 为了复用下面的逻辑，我们构造一个简单的对象或直接处理内容
+                    if content:
+                         # 这里为了不破坏下面的流处理逻辑，我们模拟下面的结构
+                         pass
                     else:
-                        # 在思考标签内，不输出
-                        thinking_buffer = ""
+                        continue
+
+                # 3. 标准 OpenAI 对象类型 (ChatCompletionChunk)
+                # 使用 hasattr 安全访问，避免 'str' object has no attribute 'choices' 报错
+                if hasattr(chunk, "choices") and chunk.choices and len(chunk.choices) > 0:
+                    delta = chunk.choices[0].delta
+                    if hasattr(delta, "content") and delta.content:
+                        content = delta.content
+                        full_response += content
+                        
+                        # === 思考标签处理逻辑 ===
+                        # 检测和过滤思考标签
+                        # 将内容添加到缓冲区以检测标签
+                        thinking_buffer += content
+                        
+                        # 检查是否进入思考标签
+                        if not in_thinking_tag and ('<think>' in thinking_buffer.lower() or '<thinking>' in thinking_buffer.lower()):
+                            in_thinking_tag = True
+                            # 输出标签之前的内容
+                            before_tag = re.split(r'<think>|<thinking>', thinking_buffer, flags=re.IGNORECASE)[0]
+                            if before_tag:
+                                yield before_tag
+                            thinking_buffer = ""
+                            continue
+                        
+                        # 检查是否退出思考标签
+                        if in_thinking_tag and ('</think>' in thinking_buffer.lower() or '</thinking>' in thinking_buffer.lower()):
+                            in_thinking_tag = False
+                            # 清空缓冲区，跳过标签后的内容
+                            thinking_buffer = re.split(r'</think>|</thinking>', thinking_buffer, flags=re.IGNORECASE)[-1]
+                            continue
+                        
+                        # 如果不在思考标签内，输出内容
+                        if not in_thinking_tag:
+                            # 保留最后几个字符在缓冲区以检测跨块的标签
+                            if len(thinking_buffer) > THINKING_TAG_BUFFER_SIZE:
+                                yield_content = thinking_buffer[:-THINKING_TAG_BUFFER_SIZE]
+                                thinking_buffer = thinking_buffer[-THINKING_TAG_BUFFER_SIZE:]
+                                yield yield_content
+                        else:
+                            # 在思考标签内，不输出
+                            thinking_buffer = ""
+                        # === 思考标签处理逻辑结束 ===
+                
+                # 处理 dict 情况的内容输出 (简化版，不支持思考标签过滤，假设 dict 格式通常不带思考标签或不需要过滤)
+                elif isinstance(chunk, dict):
+                    choices = chunk.get("choices", [])
+                    if choices and len(choices) > 0:
+                        delta = choices[0].get("delta", {})
+                        content = delta.get("content") if isinstance(delta, dict) else getattr(delta, "content", None)
+                        if content:
+                            full_response += content
+                            yield content
             
             # 输出剩余缓冲区内容（如果不在思考标签内）
             if thinking_buffer and not in_thinking_tag:
