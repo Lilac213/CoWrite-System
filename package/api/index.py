@@ -10,6 +10,8 @@ package_dir = os.path.dirname(current_dir)
 
 # 将 package 目录添加到 Python 路径，以便可以导入 backend 模块
 sys.path.append(package_dir)
+# 将 backend 目录也添加到 Python 路径，以便内部模块可以使用 from app... 导入
+sys.path.append(os.path.join(package_dir, 'backend'))
 
 try:
     # 尝试导入 FastAPI 应用
