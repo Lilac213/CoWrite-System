@@ -34,6 +34,11 @@ const SessionMonitor = ({ adminToken }) => {
     // const password = prompt("请输入管理员密码以确认停止操作:");
     // if (!password) return;
 
+    if (!adminToken) {
+      toast.error('认证令牌丢失，请重新登录');
+      return;
+    }
+
     try {
       await adminAPI.stopSession(sessionId, adminToken);
       toast.success('会话已停止');
