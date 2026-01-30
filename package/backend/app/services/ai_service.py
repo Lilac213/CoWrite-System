@@ -429,7 +429,35 @@ class AIService:
                     raise
 
             # 获取原始响应内容
-            raw_content = response.choices[0].message.content or ""
+            raw_content = ""
+            
+            # 增强的健壮性检查：处理各种可能的返回格式
+            if isinstance(response, str):
+                # 1. 字符串类型（某些代理或非标准接口可能直接返回内容）
+                raw_content = response
+            elif isinstance(response, dict):
+                # 2. 字典类型（如果使用了某些转换或兼容层）
+                choices = response.get("choices", [])
+                if choices and len(choices) > 0:
+                    message = choices[0].get("message", {})
+                    if isinstance(message, dict):
+                        raw_content = message.get("content") or ""
+                    elif hasattr(message, "content"):
+                        raw_content = getattr(message, "content", "") or ""
+            elif hasattr(response, "choices"):
+                # 3. 标准 OpenAI 对象类型
+                # 使用安全访问方式
+                if response.choices and len(response.choices) > 0:
+                    message = response.choices[0].message
+                    raw_content = message.content or ""
+            else:
+                # 无法识别的格式，尝试直接转换为字符串作为最后手段
+                print(f"[AI WARNING] 无法识别的响应格式: {type(response)}", flush=True)
+                raw_content = str(response)
+
+            # 确保 raw_content 不为 None
+            if raw_content is None:
+                raw_content = ""
             
             # 移除思考标签
             filtered_content = remove_thinking_tags(raw_content)
