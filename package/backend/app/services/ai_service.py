@@ -219,6 +219,13 @@ class AIService:
                     stream = await self.client.chat.completions.create(**api_params)
                 else:
                     # 不可重试的错误，直接抛出带有更详细信息的异常
+                    error_msg_lower = str(api_error).lower()
+                    if "quota" in error_msg_lower or "balance" in error_msg_lower or "insufficient" in error_msg_lower:
+                        raise Exception(
+                            f"AI 服务商账户余额不足: {str(api_error)}。\n"
+                            f"请检查您的 DeepSeek/OpenAI 账户余额是否充足。"
+                        )
+
                     if isinstance(api_error, PermissionDeniedError):
                         raise Exception(
                             f"AI 请求被拒绝: {str(api_error)}。"
@@ -419,6 +426,13 @@ class AIService:
                     response = await self.client.chat.completions.create(**api_params)
                 else:
                     # 不可重试的错误，直接抛出带有更详细信息的异常
+                    error_msg_lower = str(api_error).lower()
+                    if "quota" in error_msg_lower or "balance" in error_msg_lower or "insufficient" in error_msg_lower:
+                        raise Exception(
+                            f"AI 服务商账户余额不足: {str(api_error)}。\n"
+                            f"请检查您的 DeepSeek/OpenAI 账户余额是否充足。"
+                        )
+
                     if isinstance(api_error, PermissionDeniedError):
                         raise Exception(
                             f"AI 请求被拒绝: {str(api_error)}。"
