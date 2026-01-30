@@ -57,7 +57,7 @@ const WelcomePage = () => {
         toast.error('所有 AI 模型当前不可用，无法使用系统。请联系管理员。');
         return;
       } else {
-        toast.warning('部分 AI 模型不可用，系统功能可能受限。');
+        toast('部分 AI 模型不可用，系统功能可能受限。', { icon: '⚠️' });
       }
     }
     
