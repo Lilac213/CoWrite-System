@@ -30,11 +30,12 @@ const SessionMonitor = ({ adminToken }) => {
     if (!window.confirm('确定要强制停止该会话吗？')) {
       return;
     }
-    const password = prompt("请输入管理员密码以确认停止操作:");
-    if (!password) return;
+    // 二次确认防止误操作，但不再需要输入密码用于鉴权
+    // const password = prompt("请输入管理员密码以确认停止操作:");
+    // if (!password) return;
 
     try {
-      await adminAPI.stopSession(sessionId, password);
+      await adminAPI.stopSession(sessionId, adminToken);
       toast.success('会话已停止');
       fetchActiveSessions();
     } catch (error) {

@@ -57,9 +57,9 @@ export const adminAPI = {
     api.delete(`/admin/users/${userId}`, {
       params: { admin_password: password },
     }),
-  stopSession: (sessionId, password) =>
+  stopSession: (sessionId, token) =>
     api.post(`/admin/sessions/${sessionId}/stop`, null, {
-      params: { admin_password: password },
+      headers: { Authorization: `Bearer ${token}` },
     }),
   toggleUserActive: (userId, password) =>
     api.put(`/admin/users/${userId}/toggle-active`, null, {
